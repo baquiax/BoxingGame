@@ -68,8 +68,9 @@ public class BoxingClient extends Application {
 				            }           
 			            }
 					} catch (Exception e) {e.printStackTrace();}
-				}        
+				}				        
 			});
+			receiverThread.start();
         } catch (Exception e) {
             e.printStackTrace();
         } 		 
