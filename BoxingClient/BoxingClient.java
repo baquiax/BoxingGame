@@ -56,6 +56,7 @@ public class BoxingClient extends Application {
 					            if (inServer.equals("OK")) {
 					            	okReceived = true;
 					            	BoxingClient.senderSocket = new Socket(SERVER_IP, SERVER_PORT);
+									print("Second socket created!");
 					            }
 					            if (inServer.equals("GO")) {
 				            		goReceived = true;
@@ -148,6 +149,7 @@ public class BoxingClient extends Application {
 
 	//Gaming
 	public static void parseBox (String sRead){
+		print(sRead + "\r\n");
     	// parSeo instrucciones por ;
     	String instrucciones [] = sRead.split(";");
     	
