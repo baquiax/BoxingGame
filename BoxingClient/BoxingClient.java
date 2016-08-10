@@ -19,7 +19,7 @@ import java.net.Socket;
 
 
 public class BoxingClient extends Application {
-	private static final int		KEYBOARD_MOVEMENT_DELTA = 5;
+	private static final int		KEYBOARD_MOVEMENT_DELTA = 20;
     private static final Duration	TRANSLATE_DURATION      = Duration.seconds(0.25);
 	private static final String		SERVER_IP 				= "192.168.0.15";
     private static final int		SERVER_PORT 			= 3141;
@@ -28,6 +28,7 @@ public class BoxingClient extends Application {
 	private static int[] 			fpPosition, fpPunch, spPosition, spPunch, score;    
     private static Socket 			receiverSocket, senderSocket;  
 	private static Circle 			circle;
+	private static Circle 			secondCircle;
 
     public static void main(String[] args) {		
 		BoxingClient.fpPosition = new int[2];
@@ -79,8 +80,9 @@ public class BoxingClient extends Application {
     
     @Override 
 	public void start(Stage stage) throws Exception {
-		BoxingClient.circle = createCircle();
-		final Group group = new Group(circle);
+		BoxingClient.circle = createCircle(Color.YELLOW);
+		BoxingClient.secondCircle = createCircle(Color.RED);
+		final Group group = new Group(circle, secondCircle);
 		final TranslateTransition transition = createTranslateTransition(circle);    
 		final Scene scene = new Scene(group, 800, 600, Color.BLACK);
 		moveCircleOnKeyPress(scene, circle);
@@ -89,8 +91,8 @@ public class BoxingClient extends Application {
 		stage.show();
 	}  
 
-	private Circle createCircle() {
-		final Circle circle = new Circle(400, 300, 40, Color.RED);
+	private Circle createCircle(Color c) {
+		final Circle circle = new Circle(400, 300, 40, c);
 		circle.setOpacity(0.8);
 		return circle;
 	}
@@ -137,8 +139,11 @@ public class BoxingClient extends Application {
 		scene.setOnMousePressed(new EventHandler<MouseEvent>() {
 			@Override public void handle(MouseEvent event) {
 				if (!event.isControlDown()) {
-					circle.setCenterX(event.getSceneX());
-					circle.setCenterY(event.getSceneY());
+					//circle.setCenterX(event.getSceneX());
+					//circle.setCenterY();
+					double x = event.getSceneX();
+					double y = event.getSceneY();
+					BoxingClient.sendData((int)x + "/" + (int)y + ";0/0");
 				} else {
 					transition.setToX(event.getSceneX() - circle.getCenterX());
 					transition.setToY(event.getSceneY() - circle.getCenterY());
@@ -185,7 +190,10 @@ public class BoxingClient extends Application {
 
 		//Temporally here
 		circle.setCenterX(fpPosition[0]);
-		circle.setCenterY(fpPosition[1]);    	    	
+		circle.setCenterY(fpPosition[1]);
+
+		secondCircle.setCenterX(spPosition[0]);
+		secondCircle.setCenterY(spPosition[1]);
     }
     
     public static String desParser (){
