@@ -117,18 +117,18 @@ public class BoxingClient extends Application {
 				switch (event.getCode()) {
 					case UP:    
 						//circle.setCenterY(circle.getCenterY() - KEYBOARD_MOVEMENT_DELTA); break;
-						y -= KEYBOARD_MOVEMENT_DELTA; break;
+						y -= KEYBOARD_MOVEMENT_DELTA; BoxingClient.sendData((int)x + "/" + (int)y + ";0/0");break;
 					case RIGHT: 
 						//circle.setCenterX(circle.getCenterX() + KEYBOARD_MOVEMENT_DELTA); break;
-						x += KEYBOARD_MOVEMENT_DELTA; break;
+						x += KEYBOARD_MOVEMENT_DELTA; BoxingClient.sendData((int)x + "/" + (int)y + ";0/0");break;
           			case DOWN:  
 					  	//circle.setCenterY(circle.getCenterY() + KEYBOARD_MOVEMENT_DELTA); break;
-						y += KEYBOARD_MOVEMENT_DELTA; break;
+						y += KEYBOARD_MOVEMENT_DELTA; BoxingClient.sendData((int)x + "/" + (int)y + ";0/0");break;
           			case LEFT:  
 					  	//circle.setCenterX(circle.getCenterX() - KEYBOARD_MOVEMENT_DELTA); break;
-						x -= KEYBOARD_MOVEMENT_DELTA; break;
+						x -= KEYBOARD_MOVEMENT_DELTA; BoxingClient.sendData((int)x + "/" + (int)y + ";0/0");break;
         		}				
-				BoxingClient.sendData(x + "/" + y + ";0/0");
+				
 			}
 		});
 	}
@@ -185,7 +185,7 @@ public class BoxingClient extends Application {
 
 		//Temporally here
 		circle.setCenterX(fpPosition[0]);
-		circle.setCenterY(fpPosition[0]);    	    	
+		circle.setCenterY(fpPosition[1]);    	    	
     }
     
     public static String desParser (){
@@ -215,6 +215,7 @@ public class BoxingClient extends Application {
 	}
 
 	public static void sendData(String s) {
+		print("Sending: " + s + "\r\n");
     	if (s == null) return;
     	try {
 			if (BoxingClient.senderSocket != null) {
