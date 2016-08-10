@@ -214,7 +214,11 @@ public class BoxingClient extends Application {
 	public static void sendData(String s) {
     	if (s == null) return;
     	try {
-    		BoxingClient.senderSocket.getOutputStream().write(s.getBytes());
+			if (BoxingClient.senderSocket != null) {
+				BoxingClient.senderSocket.getOutputStream().write(s.getBytes());
+			} else {
+				print("senderSocket is null");
+			}    		
     	} catch (Exception e) {
     		e.printStackTrace();
     	}
