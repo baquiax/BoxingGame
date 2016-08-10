@@ -21,7 +21,7 @@ import java.net.Socket;
 public class BoxingClient extends Application {
 	private static final int		KEYBOARD_MOVEMENT_DELTA = 5;
     private static final Duration	TRANSLATE_DURATION      = Duration.seconds(0.25);
-	private static final String		SERVER_IP 				= "127.0.0.1";
+	private static final String		SERVER_IP 				= "192.168.0.15";
     private static final int		SERVER_PORT 			= 3141;
 
 	private static int 				counter = 90; //Descendent counter
