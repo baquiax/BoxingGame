@@ -9,7 +9,7 @@ import javafx.util.Duration;
 
 public class Player extends Transition {
     private ImageView imageView;    
-    private boolean left;
+    public boolean left;
 
     public Player(String imageName) {        
         Image i = new Image(imageName);
@@ -20,8 +20,7 @@ public class Player extends Transition {
         setInterpolator(Interpolator.LINEAR);
     }
     
-    protected void interpolate(double k) {
-        System.out.println(k);
+    protected void interpolate(double k) {    
         if (k < 1.0) return;
         if (left) {
             rightMove();
