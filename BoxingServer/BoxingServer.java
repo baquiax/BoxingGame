@@ -1,4 +1,3 @@
-package edu.galieo.boxing;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.DataOutputStream;
@@ -31,7 +30,7 @@ public class BoxingServer {
 	public static void main(String[] args) throws IOException {
 		
 		
-		//Rango del puerto válido [1024,49151]
+		//Rango del puerto v�lido [1024,49151]
 		
 		Socket tempSocket = null;	
 		Socket p1 = null;
@@ -39,7 +38,7 @@ public class BoxingServer {
 		Socket p1a = null;
 		Socket p2a = null;
 		String player1 = "PL1";
-		String player2 = "PL12";
+		String player2 = "PL2";
 		
 		BufferedReader brd = new BufferedReader(new FileReader("ScoreBoard.txt"));
 		try {
@@ -60,45 +59,24 @@ public class BoxingServer {
 
 		
 		try {
-			 Runtime.getRuntime().addShutdownHook(new Thread() {
-	                public void run() {
-	                    try {                
-	                    	server.close();
-	                        System.out.println("Close server ...");        
-	                    } catch (Exception ex) {
-	                        // TODO Auto-generated catch block
-	                        ex.printStackTrace();
-	                    }
-	                }
-	            });
+			 
 			server = new ServerSocket(PORT);
 			System.out.println("Server started");
 			boolean a = true;
 			ExecutorService pool = Executors.newFixedThreadPool(MAX_THREADS);
 			while(true) {
 				tempSocket = server.accept();
-				System.out.println(tempSocket.getInetAddress().getHostAddress());
+				//System.out.println(tempSocket.getInetAddress().getHostAddress());
 				if (p1 == null) {					
 					System.out.println("Welcome first player!");
 					String messageOk = "OK 1";
 					p1 = tempSocket;
 					p1.getOutputStream().write(messageOk.getBytes());
-					
-					//stempSocket.getOutputStream().close();
-					//DataOutputStream outToClient = new DataOutputStream(tempSocket.getOutputStream());
-					//outToClient.writeBytes(messageOk);
+				
 				} else if (a & p1.getInetAddress().getHostAddress().equals(tempSocket.getInetAddress().getHostAddress())) {
 					p1a = tempSocket;
 					a = false;
-//					InputStream is = p1a.getInputStream();
-//		            int length = is.available();
-//		            if (length > 0) { 
-//			            byte[] bytes = new byte[length];
-//			            //System.out.println(length);
-//			            is.read(bytes, 0, length);
-//			            player1 = new String(bytes);
-//			            System.out.println("P1: " + player1);
-//		            }   
+					
 					
 					
 				} else if (p2 == null) {
@@ -109,15 +87,7 @@ public class BoxingServer {
 				} else if (p2.getInetAddress().getHostAddress().equals(tempSocket.getInetAddress().getHostAddress())) {
 					p2a = tempSocket;
 					
-//					InputStream is1 = p2a.getInputStream();
-//		            int length1 = is1.available();
-//		            if (length1 > 0) { 
-//			            byte[] bytes1 = new byte[length1];
-//			            //System.out.println(length);
-//			            is1.read(bytes1, 0, length1);
-//			            player2 = new String(bytes1);
-//			            System.out.println("P2: " + player2);
-//		            }
+					
 			            
 				} 
 				
@@ -130,9 +100,11 @@ public class BoxingServer {
 					p2 = null;
 					p1a = null;
 					p2a = null;
+					a = true;
+					player1 = " ";
+					player2 = " ";
 					pool.execute(pr);
-					player1 = "";
-					player2 = "";
+					
 				}
 			}
 		} catch (Exception e) {

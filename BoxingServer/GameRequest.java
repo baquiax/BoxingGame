@@ -1,4 +1,3 @@
-package edu.galieo.boxing;
 import java.awt.Desktop.Action;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -210,7 +209,7 @@ public class GameRequest implements Runnable {
 						
 					} else {
 						
-						scoreL[9] = puntaje+"/"+paux;
+						scoreL[9] = "1"+"/"+paux;
 					}
 					Arrays.sort(scoreL, Collections.reverseOrder());
 					
@@ -327,6 +326,13 @@ public class GameRequest implements Runnable {
 				}
 			}
 			
+		} else {
+			if (p == 1 ) {
+			this.nombrej1 = s;
+			
+			} else {
+				this.nombrej2 = s;
+			}
 		}
 		
 	}

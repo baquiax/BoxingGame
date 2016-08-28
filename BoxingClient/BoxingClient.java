@@ -2,6 +2,8 @@ import javafx.animation.TranslateTransition;
 import edu.galileo.boxing.Player;
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Rectangle2D;
@@ -9,21 +11,35 @@ import javafx.scene.*;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListView;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
+import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.*;
+import javafx.scene.media.AudioClip;
+import javafx.scene.media.Media;
+import javafx.scene.media.MediaPlayer;
+import javafx.scene.media.MediaPlayerBuilder;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
+import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 import java.net.Socket;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
-
+import javafx.animation.Animation;
+import com.sun.deploy.uitoolkit.impl.fx.ui.FXConsole;
 import com.sun.javafx.geom.Rectangle;
 
+import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.Socket;
@@ -32,7 +48,7 @@ import java.net.Socket;
 public class BoxingClient extends Application {
 	private static final int		KEYBOARD_MOVEMENT_DELTA = 20;
     private static final Duration	TRANSLATE_DURATION      = Duration.seconds(0.25);
-	private static final String		SERVER_IP 				= "192.168.0.20";
+	private static final String		SERVER_IP 				= "localhost";
     private static final int		SERVER_PORT 			= 3141;
 
 	private static int 				counter = 90; //Descendent counter
@@ -45,9 +61,12 @@ public class BoxingClient extends Application {
 	private static Label			timer;
 	private static Label			result;
 	private static boolean			isFirstPlayer;
-	
-	
-    public static void main(String[] args) {		
+	private static TextField 		playerName;
+	private static Label			playerNameLabel;
+	private static ListView 		scoreBoard;
+	private static ImageView 		fondo;
+	private static AudioClip 		audio;
+	public static void main(String[] args) {		
 		BoxingClient.fpPosition = new int[2];
     	BoxingClient.fpPunch = new int[2];
         BoxingClient.spPosition = new int[2];    	    	
@@ -80,6 +99,34 @@ public class BoxingClient extends Application {
 		 result.setLayoutY(100);
 		 result.setVisible(false);
 		
+		 playerName = new TextField();
+		 playerName.setLayoutX(350);
+		 playerName.setLayoutY(500);
+		 playerName.setOnKeyPressed(
+	                new EventHandler<KeyEvent>()
+	                {	                	
+	                    public void handle(KeyEvent event) {	                    	
+	                    	switch (event.getCode()) {
+	                    	case ENTER:
+	                    		startGame();
+	                    		break;
+	                    	}
+	                    	
+	                    }
+	                });
+		 
+		 
+		 playerNameLabel = new Label("Ingrese su nombre: ");
+		 playerNameLabel.setLayoutX(200);
+		 playerNameLabel.setLayoutY(500);
+		 
+		 scoreBoard = new ListView();
+		 scoreBoard.setVisible(false);
+		
+		 launch(args);
+    }
+	
+	public static void startGame() {
 		try {
             BoxingClient.receiverSocket = new Socket(SERVER_IP, SERVER_PORT);
             print("Connection stablished to:" + SERVER_IP + ":" + SERVER_PORT);
@@ -89,9 +136,10 @@ public class BoxingClient extends Application {
 					try {
 						boolean okReceived = false;
 						boolean goReceived = false;
-			            
+						
 			            while (true) {							
 				            InputStream is = receiverSocket.getInputStream();
+				            if (receiverSocket == null || (receiverSocket != null && receiverSocket.isClosed())) return;
 				            int length = is.available();
 				            if (length > 0) { 
 					            byte[] bytes = new byte[length];					            
@@ -101,14 +149,17 @@ public class BoxingClient extends Application {
 					            if (inServer.startsWith("OK")) {
 					            	okReceived = true;
 					            	BoxingClient.senderSocket = new Socket(SERVER_IP, SERVER_PORT);					            	
+					            	sendData(playerName.getText());
 					            	isFirstPlayer = inServer.contains("1");					            	
 									print("Second socket created!");
+									
+									
 					            }
 					            if (inServer.equals("GO")) {
 				            		goReceived = true;
 				            		continue;
 				            	}
-					            if (okReceived & goReceived) {					            						            	
+					            if (okReceived & goReceived) {					            						            						     					            	
 					            	parseBox(inServer);					            	
 					            }					                        
 				            }           
@@ -117,23 +168,44 @@ public class BoxingClient extends Application {
 				}				        
 			});
 			receiverThread.start();
+			showSecondScene();
         } catch (Exception e) {
             e.printStackTrace();
-        } 		 
-		launch(args);
+        }			
+	}
+    
+    public static void showFirstScene() {
+    	playerName.setVisible(true);
+    	playerNameLabel.setVisible(true);
+    	timer.setVisible(false);
+    	player1Score.setVisible(false);
+    	player2Score.setVisible(false);
+   	
+    }
+    
+    public static void showSecondScene() {
+    	playerName.deselect();
+    	timer.setVisible(true);
+    	player1Score.setVisible(true);
+    	player2Score.setVisible(true);
+    	playerName.setVisible(false);
+    	playerNameLabel.setVisible(false);
+    	fondo.setImage(new Image("img/arena.png"));
     }
     
     @Override 
 	public void start(Stage stage) throws Exception {    	
+		audio = new AudioClip(getClass().getResource("sound/punch.mp3").toString());
     	stage.setTitle("Boxing game!");
     	Group root = new Group();
     	Scene sceneRoot = new Scene(root);
-        sceneRoot.setOnKeyPressed(
+
+    	sceneRoot.setOnKeyPressed(
                 new EventHandler<KeyEvent>()
                 {
                     public void handle(KeyEvent event)
                     {                        
-     
+                    	
                     	Player currentPlayer = (isFirstPlayer) ? player1 : player2;
                         double x = currentPlayer.getImageView().getX();
         				double y = currentPlayer.getImageView().getY();
@@ -160,9 +232,11 @@ public class BoxingClient extends Application {
         						BoxingClient.sendData((int)x + "/" + (int)y + ";0/0");
         						break;        						
                   			case Q:
-                  				BoxingClient.sendData((int)x + "/" + (int)y + ((isFirstPlayer) ? ";1/0" : ";0/1")); 
+                  				
+                  				BoxingClient.sendData((int)x + "/" + (int)y + ((isFirstPlayer) ? ";1/0" : ";0/1"));                   				
                   				break;
-                  			case A:                  				
+                  			case A:          
+                  				
                   				BoxingClient.sendData((int)x + "/" + (int)y + ((isFirstPlayer) ? ";0/1" : ";1/0"));
                   				break;
                   			
@@ -186,7 +260,7 @@ public class BoxingClient extends Application {
     	
     	root.getChildren().add(c);
     					
-    	ImageView fondo = new ImageView(new Image("img/arena.png"));
+    	fondo = new ImageView(new Image("img/login.png"));
     	fondo.setViewport(new Rectangle2D(0, 0, 900, 700));
     	root.getChildren().add(fondo);
 		GraphicsContext gc = c.getGraphicsContext2D();
@@ -198,10 +272,19 @@ public class BoxingClient extends Application {
 		root.getChildren().add(player2Score);
 		root.getChildren().add(timer);
 		root.getChildren().add(result);
-		
+		root.getChildren().add(playerName);
+		root.getChildren().add(playerNameLabel);
+		root.getChildren().add(scoreBoard);
 		player1.reset();
 		player2.reset();
+		player1.setCycleCount(Animation.INDEFINITE);
+        player1.play();    
+
 		stage.show();		
+		Media sound = new Media(getClass().getResource("sound/game.mp3").toString());
+		MediaPlayer mediaPlayer = new MediaPlayer(sound);
+		mediaPlayer.play();
+		showFirstScene();
 	}  
 
 	//Gaming
@@ -222,6 +305,35 @@ public class BoxingClient extends Application {
 		
 		if (sRead.toUpperCase().startsWith("SCOREBOARD")) {
 			//Mostrar Scoreboard
+			try {
+				senderSocket.close();
+				receiverSocket.close();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+			
+			String[] players = sRead.substring(10).split(";");
+			ArrayList<String> data = new ArrayList<String>();
+			for (int i = 0; i < players.length; i++) {
+				String[] d = players[i].split("/");
+				data.add(d[1] + " (" + d[0]+ ")");
+			}
+			
+			Platform.runLater(new Runnable() {
+  		      @Override public void run() {
+  		    	//TableColumn tc = new TableColumn<>("Player") ;
+  				//TableColumn tc2 = new TableColumn<>("Score") ;
+  				
+  				ObservableList<String> ol = FXCollections.observableArrayList(data);
+  				//scoreBoard.getColumns().addAll(tc,tc2);
+  				scoreBoard.setItems(ol);
+  				scoreBoard.setVisible(true);
+  		      }
+			});
+			
+			
 			
 			return;
 		}
@@ -268,8 +380,10 @@ public class BoxingClient extends Application {
     	
     	if (fpPunch[0] == 1) {
     		player1.leftPunch();
+    		audio.play();
     	} else if(fpPunch[1] == 1) {
     		player1.rightPunch();
+    		audio.play();
     	} else if (player1 != null) {    		
     		player1.reset();
     	}
@@ -279,8 +393,10 @@ public class BoxingClient extends Application {
     	spPunch[1] = Integer.parseInt(matrisgolpesusuario2[1]);
     	if (spPunch[0] == 1) {
     		player2.leftPunch();
+    		audio.play();
     	} else if(spPunch[1] == 1) {
     		player2.rightPunch();
+    		audio.play();
     	}  else if (player2 != null) {    		
     		player2.reset();
     	}
@@ -321,7 +437,7 @@ public class BoxingClient extends Application {
 		print("Sending: " + s + "\r\n");
     	if (s == null) return;
     	try {
-			if (BoxingClient.senderSocket != null) {
+			if (BoxingClient.senderSocket != null && !BoxingClient.senderSocket.isClosed()) {
 				BoxingClient.senderSocket.getOutputStream().write(s.getBytes());
 			} else {
 				print("senderSocket is null");
