@@ -110,9 +110,9 @@ public class BoxingClient extends Application {
 		timer.setLayoutX(435);
 		timer.setLayoutY(15);
 		
-		result = new Label("");
+		result = new Label("WINNER: ALX");
 		result.setTextFill(Color.INDIANRED);		 
-		result.setLayoutX(320);
+		result.setLayoutX(220);
 		result.setLayoutY(100);
 		result.setVisible(false);
 		
@@ -239,7 +239,7 @@ public class BoxingClient extends Application {
         	}
 		);		
 		playerNameLabel.setFont(this.getFontWithSize(30));
-		result.setFont(this.getFontWithSize(60));
+		result.setFont(this.getFontWithSize(40));
 		timer.setFont(this.getFontWithSize(30));
 		player1Score.setFont(this.getFontWithSize(30));
 		player2Score.setFont(this.getFontWithSize(30));
@@ -330,9 +330,16 @@ public class BoxingClient extends Application {
 		stage.show();				
 		showFirstScene();
 		setStyles();
-		showScoreBoard("SCOREBOARD 6/f;6/alex;3/sd;3/al;2/fdg;2/dfg;2/ ;1/zzz;1/test;1/ASA");
+		//showScoreBoard("SCOREBOARD 6/f;6/alex;3/sd;3/al;2/fdg;2/dfg;2/ ;1/zzz;1/test;1/ASA");
 	}  
 
+	public static void endPunch() {
+		Player currentPlayer = (isFirstPlayer) ? player1 : player2;
+		double x = currentPlayer.getImageView().getX();
+		double y = currentPlayer.getImageView().getY();
+		BoxingClient.sendData((int)x + "/" + (int)y + ";0/0");
+	}
+	
 	public static void showScoreBoard(String sRead) {
 		String[] players = sRead.substring(10).split(";");
 		ArrayList<Score> data = new ArrayList<Score>();
@@ -348,7 +355,7 @@ public class BoxingClient extends Application {
 			@Override public void run() {							
 				ObservableList ol = FXCollections.observableList(data);					
 				scoreBoard.setItems(ol);
-				//scoreBoard.setVisible(true);
+				scoreBoard.setVisible(true);
 				}
 			}
 		);
@@ -420,24 +427,33 @@ public class BoxingClient extends Application {
 		fpPunch[0] = Integer.parseInt(matrisgolpesusuario[0]);
 		fpPunch[1] = Integer.parseInt(matrisgolpesusuario[1]);
 		
-		if (fpPunch[0] == 1) {
-			player1.leftPunch();
-			punchSound.play();
-		} else if(fpPunch[1] == 1) {
-			player1.rightPunch();
-			punchSound.play();
+		if (fpPunch[0] == 1 || fpPunch[1] == 1) {
+			if (fpPunch[0] == 1) {
+				player1.leftPunch();
+				punchSound.play();
+				endPunch();
+			} else {
+				player1.rightPunch();
+				punchSound.play();
+			}	
+			if (isFirstPlayer) endPunch();			
 		}
+		
 		
 		String matrisgolpesusuario2[] = matrisgolpes[1].split("/");
 		spPunch[0] = Integer.parseInt(matrisgolpesusuario2[0]);
 		spPunch[1] = Integer.parseInt(matrisgolpesusuario2[1]);
-		if (spPunch[0] == 1) {
-			player2.leftPunch();
-			punchSound.play();
-		} else if(spPunch[1] == 1) {
-			player2.rightPunch();
-			punchSound.play();
+		if (spPunch[0] == 1 || spPunch[1] == 1) {
+			if (spPunch[0] == 1) {
+				player2.leftPunch();
+				punchSound.play();
+			} else {
+				player2.rightPunch();
+				punchSound.play();
+			}
+			if (!isFirstPlayer) endPunch();
 		}
+		
 		
 		if (player2 != null & player1 != null) {
 			player1.setPosition(fpPosition[0], fpPosition[1]);
