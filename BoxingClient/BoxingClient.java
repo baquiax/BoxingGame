@@ -37,12 +37,13 @@ import java.util.Scanner;
 import javafx.animation.Animation;
 import com.sun.deploy.uitoolkit.impl.fx.ui.FXConsole;
 import com.sun.javafx.geom.Rectangle;
-
+import javafx.scene.control.cell.PropertyValueFactory;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.Socket;
+import javafx.beans.property.SimpleStringProperty;
 
 
 public class BoxingClient extends Application {
@@ -62,12 +63,30 @@ public class BoxingClient extends Application {
 	private static boolean			isFirstPlayer;
 	private static TextField 		playerName;
 	private static Label			playerNameLabel;
-	private static ListView 		scoreBoard;
+	private static TableView 		scoreBoard;
 	private static ImageView 		fondo;
 	private static AudioClip 		punchSound;
 	private static MediaPlayer		songGame; 
 	private static Thread			receiverThread;
 	
+	public static class Score {
+		private SimpleStringProperty name;
+		private SimpleStringProperty score;
+		
+		public Score(String name, String score) {
+			this.name = new SimpleStringProperty(name.trim());
+			this.score = new SimpleStringProperty(score.trim());
+		}
+
+		public String getName() {
+			return name.get().toUpperCase();
+		}		
+
+		public String getScore() {
+			return score.get();
+		}
+	} 
+
 	public static void main(String[] args) {		
 		BoxingClient.fpPosition = new int[2];
 		BoxingClient.fpPunch = new int[2];
@@ -78,51 +97,59 @@ public class BoxingClient extends Application {
 		BoxingClient.player1 = new Player("img/p1sp.png");		
 		BoxingClient.player2 = new Player("img/p2sp.png");	
 		
-		player1Score = new Label("0");
-		player1Score.setFont((new Font("Arial", 30)));
-		player1Score.setLayoutX(15);
+		player1Score = new Label("00");
+		player1Score.setLayoutX(12);
 		player1Score.setLayoutY(15);
 		
-		player2Score = new Label("0");
-		player2Score.setFont((new Font("Arial", 30)));
-		player2Score .setLayoutX(855);
+		player2Score = new Label("00");
+		player2Score .setLayoutX(900 - 71);
 		player2Score .setLayoutY(15);
 		
 		
 		timer = new Label("00");
-		timer.setFont((new Font("Arial", 30)));
 		timer.setLayoutX(435);
 		timer.setLayoutY(15);
 		
 		result = new Label("");
-		result.setFont((new Font("Arial", 60)));
 		result.setTextFill(Color.INDIANRED);		 
 		result.setLayoutX(320);
 		result.setLayoutY(100);
 		result.setVisible(false);
 		
 		playerName = new TextField();
-		playerName.setLayoutX(350);
-		playerName.setLayoutY(500);
+		playerName.setLayoutX(450);
+		playerName.setLayoutY(490);
 		playerName.setOnKeyPressed(
-				new EventHandler<KeyEvent>()
-				{	                	
-					public void handle(KeyEvent event) {	                    	
-						switch (event.getCode()) {
-						case ENTER:
+			new EventHandler<KeyEvent>()
+			{	                	
+				public void handle(KeyEvent event) {	                    	
+					switch (event.getCode()) {
+					case ENTER:
+						if (playerName.getText().length() == 3) {
 							startGame();
-							break;
-						}
+						}							
+						break;
 					}
-				});
+				}
+			}
+		);
 		
-		playerNameLabel = new Label("Ingrese su nombre: ");
-		playerNameLabel.setLayoutX(200);
+		playerNameLabel = new Label("NAME: ");
+		playerNameLabel.setLayoutX(300);
 		playerNameLabel.setLayoutY(500);
 		 
-		scoreBoard = new ListView();
+		scoreBoard = new TableView();
+		TableColumn tc = new TableColumn("PLAYER") ;
+		tc.setCellValueFactory(new PropertyValueFactory("name"));		
+		TableColumn tc2 = new TableColumn("SCORE") ;
+		tc2.setCellValueFactory(new PropertyValueFactory("score"));
+		scoreBoard.getColumns().addAll(tc,tc2);
+		scoreBoard.setPrefWidth(300);
+        scoreBoard.setPrefHeight(320);
+        scoreBoard.setLayoutX(290);
+		scoreBoard.setLayoutY(200);
+		scoreBoard.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 		scoreBoard.setVisible(false);
-		
 		launch(args);
 	}
 	
@@ -180,7 +207,7 @@ public class BoxingClient extends Application {
 		timer.setVisible(false);
 		player1Score.setVisible(false);
 		player2Score.setVisible(false);
-   	
+   		fondo.setImage(new Image("img/login.png"));		
 	}
 	
 	public static void showSecondScene() {
@@ -193,6 +220,31 @@ public class BoxingClient extends Application {
 		fondo.setImage(new Image("img/arena.png"));
 	}
 	
+	private Font getFontWithSize(int size) {
+		return Font.loadFont(
+      		getClass().getResource("fonts/PressStart2P-Regular.ttf").toExternalForm(), 
+			size
+    	);
+	}
+	public void setStyles() {
+		playerName.setFont(this.getFontWithSize(30));
+		playerName.setStyle("-fx-focus-color: transparent; -fx-background-color: -fx-control-inner-background; -fx-text-fill: #DD4B39");
+		playerName.textProperty().addListener(
+        	(observable,oldValue,newValue)-> {				
+            	if(newValue.length() > 3) {
+					playerName.setText(oldValue.toUpperCase());
+				} else {
+					playerName.setText(newValue.toUpperCase());
+				}			
+        	}
+		);		
+		playerNameLabel.setFont(this.getFontWithSize(30));
+		result.setFont(this.getFontWithSize(60));
+		timer.setFont(this.getFontWithSize(30));
+		player1Score.setFont(this.getFontWithSize(30));
+		player2Score.setFont(this.getFontWithSize(30));
+	}
+
 	@Override 
 	public void start(Stage stage) throws Exception {    	
 		punchSound = new AudioClip(getClass().getResource("sound/punch.mp3").toString());		
@@ -202,6 +254,9 @@ public class BoxingClient extends Application {
 		songGame.setOnReady(new Runnable() {
 			@Override
 			public void run() {
+				songGame.setStartTime(Duration.millis(8000));
+				songGame.setCycleCount(MediaPlayer.INDEFINITE);
+				songGame.setVolume(1.0);
 				songGame.play();
 			}
 		});		
@@ -209,7 +264,9 @@ public class BoxingClient extends Application {
 		stage.setTitle("Boxing game!");
 		Group root = new Group();
 		Scene sceneRoot = new Scene(root);
-
+		String css = getClass().getResource("css/style.css").toExternalForm();
+		sceneRoot.getStylesheets().clear();
+		sceneRoot.getStylesheets().add(css);
 		sceneRoot.setOnKeyPressed(
 			new EventHandler<KeyEvent>() {
 				public void handle(KeyEvent event) {
@@ -248,13 +305,12 @@ public class BoxingClient extends Application {
 		stage.setScene(sceneRoot);
 		
 		Canvas c = new Canvas(900,700);		
-		root.getChildren().add(c);
-						
-		fondo = new ImageView(new Image("img/login.png"));
-		fondo.setViewport(new Rectangle2D(0, 0, 900, 700));
+		root.getChildren().add(c);								
+		fondo = new ImageView();
+		fondo.setViewport(new Rectangle2D(0, 0, 900, 700));		
 		root.getChildren().add(fondo);
 		GraphicsContext gc = c.getGraphicsContext2D();
-				
+
 		root.getChildren().add(player1.getImageView());		
 		root.getChildren().add(player2.getImageView());
 		root.getChildren().add(player1Score);
@@ -273,7 +329,30 @@ public class BoxingClient extends Application {
 		player2.left = true;
 		stage.show();				
 		showFirstScene();
+		setStyles();
+		showScoreBoard("SCOREBOARD 6/f;6/alex;3/sd;3/al;2/fdg;2/dfg;2/ ;1/zzz;1/test;1/ASA");
 	}  
+
+	public static void showScoreBoard(String sRead) {
+		String[] players = sRead.substring(10).split(";");
+		ArrayList<Score> data = new ArrayList<Score>();
+		for (int i = 0; i < players.length; i++) {			
+			String[] d = players[i].split("/");
+			Score s = new Score(d[1], d[0]);			 
+			data.add(s);
+			//String[] d = players[i].split("/");
+			//data.add(d[1] + " (" + d[0]+ ")");
+		}
+		
+		Platform.runLater(new Runnable() {
+			@Override public void run() {							
+				ObservableList ol = FXCollections.observableList(data);					
+				scoreBoard.setItems(ol);
+				//scoreBoard.setVisible(true);
+				}
+			}
+		);
+	}
 
 	//Gaming
 	public static void parseBox (String sRead){		
@@ -285,7 +364,7 @@ public class BoxingClient extends Application {
   				  result.setText("WINNER: " + sRead.split(";")[1]);
   				  result.setVisible(true);
   			  }
-			});
+			});			
 			return;
 		}
 		
@@ -296,26 +375,8 @@ public class BoxingClient extends Application {
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
-			}			
-			
-			String[] players = sRead.substring(10).split(";");
-			ArrayList<String> data = new ArrayList<String>();
-			for (int i = 0; i < players.length; i++) {
-				String[] d = players[i].split("/");
-				data.add(d[1] + " (" + d[0]+ ")");
 			}
-			
-			Platform.runLater(new Runnable() {
-  			  @Override public void run() {
-  				//TableColumn tc = new TableColumn<>("Player") ;
-  				//TableColumn tc2 = new TableColumn<>("Score") ;
-  				
-  				ObservableList<String> ol = FXCollections.observableArrayList(data);
-  				//scoreBoard.getColumns().addAll(tc,tc2);
-  				scoreBoard.setItems(ol);
-  				scoreBoard.setVisible(true);
-  			  }
-			});	
+			showScoreBoard(sRead);
 			return;
 		}
 		
@@ -346,8 +407,8 @@ public class BoxingClient extends Application {
 				  @Override public void run() {
 					  String timerString = String.format("%02d", counter);
 					  timer.setText(timerString);
-					  player1Score.setText(scoretemp[0]);
-					  player2Score.setText(scoretemp[1]);    		
+					  player1Score.setText(String.format("%02d", score[0]));
+					  player2Score.setText(String.format("%02d", score[1]));    		
 				  }
 			});
 		}

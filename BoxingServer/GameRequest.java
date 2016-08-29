@@ -14,7 +14,7 @@ import javax.swing.Timer;
 
 public class GameRequest implements Runnable {
 	private Socket firstPlayer, secondPlayer, firstPlayerListener, secondPlayerListener;
-	private int counter = 30, gameId;
+	private int counter = 10, gameId;
 	private int[] fpPosition, spPosition, score, fpPunch, spPunch; 
 	private String nombrej1 , nombrej2;
 	public GameRequest(Socket p1, Socket p2, Socket p1a, Socket p2a , String player1, String player2) {
