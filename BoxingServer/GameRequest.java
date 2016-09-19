@@ -12,7 +12,7 @@ import java.util.LinkedList;
 import javax.swing.Timer;
 
 public class GameRequest implements Runnable {
-	static int GAME_TIME = 10;
+	static int GAME_TIME = 25;
 	private Socket firstPlayer, secondPlayer, firstPlayerListener, secondPlayerListener;
 	private int counter = GameRequest.GAME_TIME, gameId;
 	private int[] fpPosition, spPosition, score, fpPunch, spPunch; 
