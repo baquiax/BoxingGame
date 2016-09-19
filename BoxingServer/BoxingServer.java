@@ -109,12 +109,6 @@ public class BoxingServer {
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
-		}
-		
+		}	
 	}
-	
-	
-	
-	
-
 }

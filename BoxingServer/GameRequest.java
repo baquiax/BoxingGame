@@ -3,20 +3,21 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
-import java.io.InputStream;
+import java.io.*;
 import java.net.Socket;
 import java.time.temporal.JulianFields;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
-
 import javax.swing.Timer;
 
 public class GameRequest implements Runnable {
+	static int GAME_TIME = 10;
 	private Socket firstPlayer, secondPlayer, firstPlayerListener, secondPlayerListener;
-	private int counter = 10, gameId;
+	private int counter = GameRequest.GAME_TIME, gameId;
 	private int[] fpPosition, spPosition, score, fpPunch, spPunch; 
-	private String nombrej1 , nombrej2;
+	private String nombrej1 , nombrej2;	
+	long startTime = 0;
 	public GameRequest(Socket p1, Socket p2, Socket p1a, Socket p2a , String player1, String player2) {
 		
 		BoxingServer bS = new BoxingServer();
@@ -43,46 +44,54 @@ public class GameRequest implements Runnable {
 			this.firstPlayer.getOutputStream().write(go.getBytes());
 			this.secondPlayer.getOutputStream().write(go.getBytes());
 			
-			 int delay = 100; //milliseconds
-			  ActionListener taskPerformer = new ActionListener() {
-			      public void actionPerformed(ActionEvent evt) {
-			    	  //System.out.println("Notificando a los players. Timer:" + counter);
-			    	  sendData();
-			      }
-			  };
-			  Timer sendDataTimer = new Timer(delay, taskPerformer);
-			  sendDataTimer.start();
+			int delay = 100; //milliseconds
+			ActionListener taskPerformer = new ActionListener() {
+				public void actionPerformed(ActionEvent evt) {
+					if (startTime == 0) {
+						startTime = System.currentTimeMillis();
+					}
+					long diff = System.currentTimeMillis() - startTime;
+					counter = GAME_TIME - ((int)(diff / 1000));
+					sendData();
+				}
+			};
+			Timer sendDataTimer = new Timer(delay, taskPerformer);
+			sendDataTimer.start();
 			  
-			  ActionListener timer = new ActionListener() {
-			      public void actionPerformed(ActionEvent evt) {
-			    	  
-			    		  counter--;  
-			    	  
-			    	  
-			      }
-			  };
-			  Timer counterTimer = new Timer(1000, timer);
-			  counterTimer.start();
+			ActionListener timer = new ActionListener() {
+				public void actionPerformed(ActionEvent evt) {
+					if (counter >= 0) {
+						counter--;	
+					}
+				}
+			};
+			Timer counterTimer = new Timer(1000, timer);
+			//counterTimer.start();
 			  
-			  Thread t1 = new Thread(new Runnable() {
-				
-				@SuppressWarnings("deprecation")
-				@Override
+			Thread t1 = new Thread(new Runnable() {				
+
+			@SuppressWarnings("deprecation")
+			@Override
 				public void run() {
 					try{
 				           boolean ifGo = false;
 				            boolean ifOk = false;
-				            while (counter >= 0 && !firstPlayerListener.isClosed()) {
-					            InputStream is = firstPlayerListener.getInputStream();
+				            while (counter >= 0 && !firstPlayerListener.isClosed()) {								
+								BufferedReader in = new BufferedReader(new InputStreamReader(firstPlayerListener.getInputStream()));								
+                				String clientRequest = null;
+								while ((clientRequest = in.readLine()) != null) {
+									parseClientData(1,clientRequest);
+								}								 
+					            /*InputStream is = firstPlayerListener.getInputStream();
 					            int length = is.available();
 					            if (length > 0) { 
 						            byte[] bytes = new byte[length];
 						            //System.out.println(length);
 						            is.read(bytes, 0, length);
 						            String inServer = new String(bytes);
-						            System.out.println("P1: " + inServer);
+						            //System.out.println("P1: " + inServer);
 						            parseClientData(1,inServer);
-					            }           
+					            }*/          
 				            }
 				           
 						} catch (Exception e) {e.printStackTrace();}
@@ -98,16 +107,21 @@ public class GameRequest implements Runnable {
 					           boolean ifGo = false;
 					            boolean ifOk = false;
 					            while (counter >= 0 && !secondPlayerListener.isClosed()) {
-						            InputStream is = secondPlayerListener.getInputStream();
+									BufferedReader in = new BufferedReader(new InputStreamReader(secondPlayerListener.getInputStream()));
+									String clientRequest = null;
+									while ((clientRequest = in.readLine()) != null) {
+										parseClientData(2,clientRequest);
+									}
+						            /*InputStream is = secondPlayerListener.getInputStream();
 						            int length = is.available();
 						            if (length > 0) { 
 							            byte[] bytes = new byte[length];
 							            //System.out.println(length);
 							            is.read(bytes, 0, length);
 							            String inServer = new String(bytes);
-							            System.out.println("P2: " + inServer);
+							            //System.out.println("P2: " + inServer);
 							            parseClientData(2,inServer);
-						            }           
+						            } */          
 					            }
 							} catch (Exception e) {e.printStackTrace();}
 						
@@ -119,9 +133,10 @@ public class GameRequest implements Runnable {
 			  t2.start();
 			  			  
 			  while (true){
-				  System.out.println(counter);
+				  print(counter + "");				  
 				  if (counter >= 0) continue;
-				  System.out.println("ENVIANDOOOOOO");
+				  sendDataTimer.stop();
+
 				  String scoreBaux = BoxingServer.scoreBoard;
 				  String[] scoreL = scoreBaux.split(";");
 				  String paux = " ";
@@ -130,15 +145,18 @@ public class GameRequest implements Runnable {
 					  //gano p1
 					  paux = this.nombrej1;
 					  puntaje = this.score[0];
-				  } else {
+				  } else if (score[0] < score[1]) {
 					  paux = this.nombrej2;
 					  puntaje = this.score[1];
+				  } else {
+					  paux = "---";
+					  puntaje = 0;
 				  }
 				  
-				  this.firstPlayer.getOutputStream().write(("STOP;"+paux).getBytes());
-				  this.secondPlayer.getOutputStream().write(("STOP;"+paux).getBytes());
+				  this.firstPlayer.getOutputStream().write(("STOP;"+paux+"\r\n").getBytes());
+				  this.secondPlayer.getOutputStream().write(("STOP;"+paux+"\r\n").getBytes());
 				  
-				  System.out.println("ENVIO STOP" +scoreBaux);
+				 print("ENVIO STOP" +scoreBaux);
 				  
 				  if(scoreL[0].contains(paux)){
 						String p21 = scoreL[0];
@@ -223,15 +241,15 @@ public class GameRequest implements Runnable {
 					writer.write(scoreF);
 					writer.close();
 					BoxingServer.scoreBoard = scoreF;
-					System.out.println(("SCOREBOARD " + scoreF));
+					print(("SCOREBOARD " + scoreF));
 					this.firstPlayer.getOutputStream().write(("SCOREBOARD " + scoreF).getBytes());
 					this.secondPlayer.getOutputStream().write(("SCOREBOARD " + scoreF).getBytes());
 					break;
 				    
 				  
 			  }
-			  counterTimer.stop();
-			  sendDataTimer.stop();			  
+			  //counterTimer.stop();
+			  
 			  
 			  this.firstPlayer.close();
 			  this.secondPlayer.close();
@@ -341,7 +359,7 @@ public class GameRequest implements Runnable {
 		String gameState = this.fpPosition[0] + "/" + this.fpPosition[1] + "," 
 						   + this.spPosition[0] + "/" + this.spPosition[1] + ";";
 		
-		gameState += this.counter + ";";
+		gameState += Math.max(this.counter,0) + ";";
 		
 		gameState += this.score[0] + "/" + this.score[1] + ";";
 		
@@ -349,8 +367,15 @@ public class GameRequest implements Runnable {
 				   + this.spPunch[0] + "/" + this.spPunch[1] + ";";
 		
 		try {
-			this.firstPlayer.getOutputStream().write(gameState.getBytes());
-			this.secondPlayer.getOutputStream().write(gameState.getBytes());
+			PrintWriter out1 = new PrintWriter(firstPlayer.getOutputStream(), true);                
+			out1.print(gameState + "\r\n");
+			out1.flush();
+
+			PrintWriter out2 = new PrintWriter(secondPlayer.getOutputStream(), true);
+			out2.print(gameState + "\r\n");
+			out2.flush();
+			//this.firstPlayer.getOutputStream().write(gameState.getBytes());
+			//this.secondPlayer.getOutputStream().write(gameState.getBytes());
 		} catch(Exception e) {
 			e.printStackTrace();
 		}		
@@ -363,5 +388,8 @@ public class GameRequest implements Runnable {
 	public void setFirstPlayerListener(Socket s) {
 		this.firstPlayerListener = s;
 	}
-		
+
+	public static void print(String msg) {
+		//System.out.println("SERVER >> " + msg);
+	}	
 }

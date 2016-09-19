@@ -11,6 +11,9 @@ import javafx.scene.*;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Label;
+import javafx.scene.control.Button;
+import javafx.scene.control.Dialog;
+import javafx.scene.control.Alert;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
@@ -38,11 +41,12 @@ import javafx.animation.Animation;
 import com.sun.deploy.uitoolkit.impl.fx.ui.FXConsole;
 import com.sun.javafx.geom.Rectangle;
 import javafx.scene.control.cell.PropertyValueFactory;
-import java.io.File;
+import java.io.*	;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.Socket;
+import java.net.InetAddress;
 import javafx.beans.property.SimpleStringProperty;
 
 
@@ -63,6 +67,10 @@ public class BoxingClient extends Application {
 	private static boolean			isFirstPlayer;
 	private static TextField 		playerName;
 	private static Label			playerNameLabel;
+	private static TextField 		ip;
+	private static Label			ipLabel;
+	private static Button			startGameButton;
+
 	private static TableView 		scoreBoard;
 	private static ImageView 		fondo;
 	private static AudioClip 		punchSound;
@@ -107,7 +115,7 @@ public class BoxingClient extends Application {
 		
 		
 		timer = new Label("00");
-		timer.setLayoutX(435);
+		timer.setLayoutX(425);
 		timer.setLayoutY(15);
 		
 		result = new Label("WINNER: ALX");
@@ -116,28 +124,60 @@ public class BoxingClient extends Application {
 		result.setLayoutY(100);
 		result.setVisible(false);
 		
-		playerName = new TextField();
-		playerName.setLayoutX(450);
-		playerName.setLayoutY(490);
-		playerName.setOnKeyPressed(
-			new EventHandler<KeyEvent>()
-			{	                	
-				public void handle(KeyEvent event) {	                    	
-					switch (event.getCode()) {
-					case ENTER:
-						if (playerName.getText().length() == 3) {
-							startGame();
-						}							
-						break;
-					}
-				}
-			}
-		);
-		
 		playerNameLabel = new Label("NAME: ");
-		playerNameLabel.setLayoutX(300);
-		playerNameLabel.setLayoutY(500);
+		playerNameLabel.setLayoutX(200);
+		playerNameLabel.setLayoutY(550);
+
+		playerName = new TextField();
+		playerName.setLayoutX(350);
+		playerName.setLayoutY(540);						
 		 
+		ipLabel = new Label("IP: ");
+		ipLabel.setLayoutX(200);
+		ipLabel.setLayoutY(500);
+
+		
+		ip = new TextField("192.168.1.1");
+		ip.setLayoutX(350);
+		ip.setLayoutY(490);
+		
+		startGameButton = new Button("START NEW GAME");
+		startGameButton.setLayoutX(240);
+		startGameButton.setLayoutY(600);		
+		startGameButton.setOnAction(new EventHandler<ActionEvent>() {
+			@Override public void handle(ActionEvent e) {
+				if (startGameButton.getText().equals(" RESTART GAME ")) {
+					player1.getImageView().setVisible(true);
+					player2.getImageView().setVisible(true);
+				}
+        		if (playerName.getText().length() == 3 && ip.getText().length() > 0) {
+					try {
+						InetAddress inet = InetAddress.getByName(ip.getText());
+						if (inet.isReachable(200)) {
+							startGame();
+						} else {
+							Alert alert = new Alert(Alert.AlertType.ERROR);
+							alert.setTitle("Unreachable host");
+							alert.setHeaderText("I can't connect you to the server.");
+							alert.setContentText("The IP:" + ip.getText() + " is unreachable. Change it!");
+							alert.showAndWait();	
+						}
+					} catch(Exception ex) {
+						Alert alert = new Alert(Alert.AlertType.ERROR);
+						alert.setTitle("Unreachable host");
+						alert.setHeaderText("I can't connect you to the server.");
+						alert.setContentText("The IP:" + ip.getText() + " is unreachable. Change it!");
+						alert.showAndWait();
+						ex.printStackTrace();						
+					}										
+				} else {
+					Alert alert = new Alert(Alert.AlertType.ERROR);
+					alert.setTitle("Waiting for data!");
+					alert.setContentText("You need provide an IP and a NAME");							
+					alert.showAndWait();
+				}
+    		}
+		});							
 		scoreBoard = new TableView();
 		TableColumn tc = new TableColumn("PLAYER") ;
 		tc.setCellValueFactory(new PropertyValueFactory("name"));		
@@ -191,33 +231,53 @@ public class BoxingClient extends Application {
 								}					                        
 							}           
 						}
-					} catch (Exception e) {e.printStackTrace();}
-				}				        
+					} catch (Exception e) {
+						Alert alert = new Alert(Alert.AlertType.ERROR);
+						alert.setTitle("Server seems not listening!");
+						alert.setContentText("Check if the server is running.");							
+						alert.showAndWait();
+					}
+				}		        
 			});
 			receiverThread.start();
 			showSecondScene();
 		} catch (Exception e) {
-			e.printStackTrace();
+			Alert alert = new Alert(Alert.AlertType.ERROR);
+			alert.setTitle("Server seems not listening!");
+			alert.setContentText("Check if the server is running.");							
+			alert.showAndWait();
+			//e.printStackTrace();
 		}			
 	}
 	
 	public static void showFirstScene() {
+		startGameButton.setVisible(true);
+		ipLabel.setVisible(true);
+		ip.setVisible(true);
 		playerName.setVisible(true);
 		playerNameLabel.setVisible(true);
 		timer.setVisible(false);
 		player1Score.setVisible(false);
 		player2Score.setVisible(false);
    		fondo.setImage(new Image("img/login.png"));		
+		result.setVisible(false);
+		scoreBoard.setVisible(false);		
 	}
 	
 	public static void showSecondScene() {
+		startGameButton.setVisible(false);
+		ipLabel.setVisible(false);
+		ip.setVisible(false);
 		playerName.deselect();
 		timer.setVisible(true);
 		player1Score.setVisible(true);
 		player2Score.setVisible(true);
 		playerName.setVisible(false);
-		playerNameLabel.setVisible(false);
+		playerNameLabel.setVisible(false);			
 		fondo.setImage(new Image("img/arena.png"));
+		result.setVisible(false);
+		scoreBoard.setVisible(false);
+		startGameButton.setText("RESTART  GAME");
 	}
 	
 	private Font getFontWithSize(int size) {
@@ -239,6 +299,12 @@ public class BoxingClient extends Application {
         	}
 		);		
 		playerNameLabel.setFont(this.getFontWithSize(30));
+		ip.setFont(this.getFontWithSize(30));
+		ip.setStyle("-fx-focus-color: transparent; -fx-background-color: -fx-control-inner-background; -fx-text-fill: #DD4B39");
+		ipLabel.setFont(this.getFontWithSize(30));
+
+		startGameButton.setFont(this.getFontWithSize(30));
+
 		result.setFont(this.getFontWithSize(40));
 		timer.setFont(this.getFontWithSize(30));
 		player1Score.setFont(this.getFontWithSize(30));
@@ -246,7 +312,8 @@ public class BoxingClient extends Application {
 	}
 
 	@Override 
-	public void start(Stage stage) throws Exception {    	
+	public void start(Stage stage) throws Exception {
+		stage.resizableProperty().setValue(Boolean.FALSE);    	
 		punchSound = new AudioClip(getClass().getResource("sound/punch.mp3").toString());		
 		punchSound.setCycleCount(1);
 		Media sound = new Media(getClass().getResource("sound/game.mp3").toString());				
@@ -317,8 +384,11 @@ public class BoxingClient extends Application {
 		root.getChildren().add(player2Score);
 		root.getChildren().add(timer);
 		root.getChildren().add(result);
+		root.getChildren().add(ip);
+		root.getChildren().add(ipLabel);
 		root.getChildren().add(playerName);
 		root.getChildren().add(playerNameLabel);
+		root.getChildren().add(startGameButton);		
 		root.getChildren().add(scoreBoard);
 		player1.reset();
 		player2.reset();
@@ -356,9 +426,9 @@ public class BoxingClient extends Application {
 				ObservableList ol = FXCollections.observableList(data);					
 				scoreBoard.setItems(ol);
 				scoreBoard.setVisible(true);
-				}
-			}
-		);
+				startGameButton.setVisible(true);
+			}			
+		});
 	}
 
 	//Gaming
@@ -471,7 +541,18 @@ public class BoxingClient extends Application {
 		return gameState;
 	}
 
+
 	public static String readData() {
+		try {			
+			BufferedReader in = new BufferedReader(new InputStreamReader(receiverSocket.getInputStream()));                
+        	return in.readLine();
+		} catch(Exception e) {
+			e.printStackTrace();
+		}		
+		return "";
+	}
+
+	public static String readDataDeprecated() {
 		String result = "";
 		try {
 			InputStream is = receiverSocket.getInputStream();
@@ -487,7 +568,7 @@ public class BoxingClient extends Application {
 		return result;
 	}
 
-	public static void sendData(String s) {
+	public static void sendDataDeprecated(String s) {
 		if (s == null && !senderSocket.isClosed()) return;
 		print("Sending: " + s + "\r\n");		
 		try {
@@ -501,7 +582,17 @@ public class BoxingClient extends Application {
 		}
 	}
 
+	public static void sendData(String s) {
+		try {
+			PrintWriter out = new PrintWriter(senderSocket.getOutputStream(), true);                
+			out.print(s + "\r\n");
+			out.flush();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}		
+	}
+
 	public static void print(String msg) {
-		System.out.println("BOXING CLIENT >> " + msg);
+		//System.out.println("BOXING CLIENT >> " + msg);
 	}
 }

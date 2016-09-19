@@ -72,3 +72,17 @@
 .table-view > .virtual-flow > .scroll-bar > .decrement-button {
     -fx-opacity: 0;
 }
+
+.button { 
+    -fx-text-fill: #2196f3;
+    -fx-background-color: #fff;
+    -fx-border-color: #e1e1e1;
+    -fx-padding:10px;
+}
+
+.button:hover {
+    -fx-text-fill: #2196f3;
+    -fx-background-color: #fefefe;
+    -fx-padding:10px;
+    -fx-border-color: #a1a1a1;
+}
