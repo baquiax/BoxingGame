@@ -1,0 +1,1 @@
+jar cmvf META-INF/MANIFEST.MF boxing.jar .
